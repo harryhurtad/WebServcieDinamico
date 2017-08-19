@@ -1,0 +1,6 @@
+com\unico\ws\faces\JSFWSHelper.class
+com\unico\ws\faces\FacesUtil.class
+com\unico\ws\UnicoWSServlet.class
+com\unico\ws\UnicoWSServlet$ExcecuteOperataionNewInstanceClass.class
+com\unico\ws\UnicoWSServlet$ExcecuteOperataionMethod.class
+com\unico\ws\faces\FacesUtil$FacesContextWrapper.class

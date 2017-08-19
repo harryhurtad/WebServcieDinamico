@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="http://xml.netbeans.org/schema/RealizarCargue"
+    xmlns:tns="http://xml.netbeans.org/schema/RealizarCargue"
+    elementFormDefault="qualified">
+    <xsd:complexType name="UsuarioDTOComplexType">
+        <xsd:sequence>
+            <xsd:element name="usuario" type="xsd:string"></xsd:element>
+            <xsd:element name="password" type="xsd:string"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="RealizarCargueComplexType">
+        <xsd:sequence>
+            <xsd:element name="usuarioDTO" type="tns:UsuarioDTOComplexType"></xsd:element>
+            <xsd:element name="dato1" type="xsd:integer"></xsd:element>
+            <xsd:element name="dato2" type="xsd:integer"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:element name="realizarCargueDTO" type="tns:UsuarioDTOComplexType"></xsd:element>
+</xsd:schema>

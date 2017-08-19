@@ -1,0 +1,22 @@
+/**
+----------NO EDITAR-----------
+**/
+
+<#if packageInterface?? && packageInterface != "">
+package ${packageInterface};
+
+</#if>     
+    import javax.ejb.Remote;
+ 
+ 
+ @Remote
+ public interface ${name_interface}  {
+
+  <#list operaciones as operacion>   
+        
+        public <#if operacion.idClaseRetornoOperacion??>${operacion.idClaseRetornoOperacion.packageClass}.${operacion.idClaseRetornoOperacion.nombreCLase}<#else>String</#if>  ${operacion.metodoOperacion}  (
+        <#list operacion.publicadorWsParametrosOperacionesList as parametro><#if parametro.ordenParametro==1 && !(parametro.idClaseValor.archivoXSD)?? >${parametro.idClaseValor.packageClass}.${parametro.idClaseValor.nombreCLase}   ${parametro.nombreParametro}<#elseif parametro.ordenParametro==1 && parametro.idClaseValor.archivoXSD??>byte[] ${parametro.nombreParametro}, String[] list${parametro.nombreParametro}
+        <#elseif (parametro.idClaseValor.archivoXSD)??>,byte[] ${parametro.nombreParametro},String[] list${parametro.nombreParametro}<#else>, ${parametro.idClaseValor.packageClass}.${parametro.idClaseValor.nombreCLase}   ${parametro.nombreParametro}</#if></#list>  );
+
+  </#list>      
+}

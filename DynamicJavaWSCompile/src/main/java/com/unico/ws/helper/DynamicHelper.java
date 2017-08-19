@@ -1,0 +1,460 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package com.unico.ws.helper;
+
+import com.unico.ws.exception.CompilerWSClassException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
+
+/**
+ *
+ * @author T13237
+ */
+public class DynamicHelper {
+
+    private String compileClasspath;
+
+    private ClassLoader parentClassLoader;
+
+    private ArrayList sourceDirs = new ArrayList();
+
+    // class name => LoadedClass
+    private HashMap loadedClasses = new HashMap();
+
+    private String pathDirOutput;
+
+    public DynamicHelper() {
+        this(Thread.currentThread().getContextClassLoader(),null);
+    }
+
+    public DynamicHelper(ClassLoader parentClassLoader){
+        this(extractClasspath(parentClassLoader),parentClassLoader);
+    } 
+    
+    public DynamicHelper(ClassLoader parentClassLoader,String extraClassPath) {
+        StringBuilder parentClassPath=new StringBuilder(extractClasspath(parentClassLoader));
+        parentClassPath.append(";");
+        parentClassPath.append(extraClassPath);
+        this.parentClassLoader=parentClassLoader;
+        this.compileClasspath=parentClassPath.toString();
+
+    }
+
+    /**
+     * @param compileClasspath used to compile dynamic classes
+     * @param parentClassLoader the parent of the class loader that loads all
+     * the dynamic classes
+     */
+    public DynamicHelper(String compileClasspath, ClassLoader parentClassLoader) {
+        this.compileClasspath = compileClasspath;
+        this.parentClassLoader = parentClassLoader;
+    }
+
+    /**
+     * Add a directory that contains the source of dynamic java code.
+     *
+     * @param srcDir
+     * @return true if the add is successful
+     */
+    public boolean addSourceDir(File srcDir) {
+
+        try {
+            srcDir = srcDir.getCanonicalFile();
+        } catch (IOException e) {
+            // ignore
+        }
+
+        synchronized (sourceDirs) {
+
+            // check existence
+            for (int i = 0; i < sourceDirs.size(); i++) {
+                SourceDir src = (SourceDir) sourceDirs.get(i);
+                if (src.srcDir.equals(srcDir)) {
+                    return false;
+                }
+            }
+
+            // add new
+            SourceDir src = new SourceDir(srcDir);
+            sourceDirs.add(src);
+
+            info("Add source dir " + srcDir);
+        }
+
+        return true;
+    }
+
+    /**
+     * Returns the up-to-date dynamic class by name.
+     *
+     * @param className
+     * @return
+     * @throws ClassNotFoundException if source file not found or compilation
+     * error
+     */
+    public Class loadClass(String className) throws ClassNotFoundException, CompilerWSClassException {
+
+        LoadedClass loadedClass = null;
+        synchronized (loadedClasses) {
+            loadedClass = (LoadedClass) loadedClasses.get(className);
+        }
+
+        // first access of a class
+        if (loadedClass == null) {
+
+            String resource = className.replace('.', '/') + ".java";
+            SourceDir src = locateResource(resource);
+            if (src == null) {
+                throw new ClassNotFoundException("DynaCode class not found " + className);
+            }
+
+            synchronized (this) {
+
+                // compile and load class
+                loadedClass = new LoadedClass(className, src,compileClasspath);
+
+                synchronized (loadedClasses) {
+                    loadedClasses.put(className, loadedClass);
+                }
+            }
+
+            return loadedClass.clazz;
+        }
+
+        // subsequent access
+        if (loadedClass.isChanged()) {
+            // unload and load again
+            unload(loadedClass.srcDir);
+            return loadClass(className);
+        }
+
+        return loadedClass.clazz;
+    }
+
+    private SourceDir locateResource(String resource) {
+        for (int i = 0; i < sourceDirs.size(); i++) {
+            SourceDir src = (SourceDir) sourceDirs.get(i);
+            if (new File(src.srcDir, resource).exists()) {
+                return src;
+            }
+        }
+        return null;
+    }
+
+    private void unload(SourceDir src) {
+        // clear loaded classes
+        synchronized (loadedClasses) {
+            for (Iterator iter = loadedClasses.values().iterator(); iter
+                    .hasNext();) {
+                LoadedClass loadedClass = (LoadedClass) iter.next();
+                if (loadedClass.srcDir == src) {
+                    iter.remove();
+                }
+            }
+        }
+
+        // create new class loader
+        src.recreateClassLoader();
+    }
+
+    /**
+     * Get a resource from added source directories.
+     *
+     * @param resource
+     * @return the resource URL, or null if resource not found
+     */
+    public URL getResource(String resource) {
+        try {
+
+            SourceDir src = locateResource(resource);
+            return src == null ? null : new File(src.srcDir, resource).toURL();
+
+        } catch (MalformedURLException e) {
+            // should not happen
+            return null;
+        }
+    }
+
+    /**
+     * Get a resource stream from added source directories.
+     *
+     * @param resource
+     * @return the resource stream, or null if resource not found
+     */
+    public InputStream getResourceAsStream(String resource) {
+        try {
+
+            SourceDir src = locateResource(resource);
+            return src == null ? null : new FileInputStream(new File(
+                    src.srcDir, resource));
+
+        } catch (FileNotFoundException e) {
+            // should not happen
+            return null;
+        }
+    }
+
+    /**
+     * Create a proxy instance that implements the specified access interface
+     * and delegates incoming invocations to the specified dynamic
+     * implementation. The dynamic implementation may change at run-time, and
+     * the proxy will always delegates to the up-to-date implementation.
+     *
+     * @param implClassName the backend dynamic implementation
+     * @return
+     * @throws com.unico.ws.exception.CompilerWSClassException
+     * @throws RuntimeException if an instance cannot be created, because of
+     * class not found for example     */
+    public Object newProxyInstance(String implClassName) throws CompilerWSClassException {
+        Class interfaceClass = null;
+        Object object = null;
+        try {
+            interfaceClass = loadClass(implClassName);
+        } catch (ClassNotFoundException e) {
+            interfaceClass = null;
+        }
+
+        if (interfaceClass != null) {
+            MyInvocationHandler handler = new MyInvocationHandler(implClassName);
+            object = Enhancer.create(interfaceClass, interfaceClass.getInterfaces(), handler);
+        }
+
+        return object;
+    }
+
+    private final class SourceDir {
+
+        File srcDir;
+
+        File binDir;
+
+        Javac javac;
+
+        URLClassLoader classLoader;
+
+        SourceDir(File srcDir) {
+            this.srcDir = srcDir;
+
+            String subdir = srcDir.getAbsolutePath().replace(':', '_').replace(
+                    '/', '_').replace('\\', '_');
+            if (getPathDirOutput() != null) {
+                this.binDir = new File(getPathDirOutput());
+            } else {
+                this.binDir = new File(System.getProperty("java.io.tmpdir"),
+                        "dynacode/" + subdir);
+            }
+            this.binDir.mkdirs();
+
+            // prepare compiler
+            this.javac = new Javac(compileClasspath, binDir.getAbsolutePath());
+
+            // class loader
+            recreateClassLoader();
+        }
+
+        void recreateClassLoader() {
+            try {
+              //  addURL(binDir.toURI().toURL(),parentClassLoader);
+                classLoader = new URLClassLoader(new URL[]{binDir.toURI().toURL()},
+                        parentClassLoader);
+            } catch (MalformedURLException e) {
+                // should not happen
+            } catch (IOException ex) {
+                Logger.getLogger(DynamicHelper.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+    }
+
+    private static final class LoadedClass {
+
+        String className;
+
+        SourceDir srcDir;
+
+        File srcFile;
+
+        File binFile;
+
+        Class clazz;
+
+        long lastModified;
+        
+        String classpath;
+
+        LoadedClass(String className, SourceDir src,String classpath) throws CompilerWSClassException {
+            this.className = className;
+            this.srcDir = src;
+
+            String path = className.replace('.', '/');
+            this.srcFile = new File(src.srcDir, path + ".java");
+            this.binFile = new File(src.binDir, path + ".class");
+            this.classpath=classpath;
+            compileAndLoadClass();
+        }
+
+        boolean isChanged() {
+            return srcFile.lastModified() != lastModified;
+        }
+
+        void compileAndLoadClass() throws CompilerWSClassException {
+
+            if (clazz != null) {
+                return; // class already loaded
+            }
+
+            // compile, if required
+            String error = null;
+            if (binFile.lastModified() < srcFile.lastModified()) {
+                try {
+                    srcDir.javac.setClasspath(classpath);
+                    srcDir.javac.compile(new File[]{srcFile});
+                } catch (CompilerWSClassException ex) {
+                    throw new CompilerWSClassException("Failed to compile "
+                            + srcFile.getAbsolutePath() + ". Error: " + ex);
+                }
+            }
+
+            try {
+                // load class
+                clazz = srcDir.classLoader.loadClass(className);
+
+                // load class success, remember timestamp
+                lastModified = srcFile.lastModified();
+
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException("Failed to load DynaCode class "
+                        + srcFile.getAbsolutePath());
+            }
+
+            info("Init " + clazz);
+        }
+    }
+
+    private class MyInvocationHandler implements MethodInterceptor {
+
+        String backendClassName;
+
+        Object backend;
+
+        MyInvocationHandler(String className) throws CompilerWSClassException {
+            backendClassName = className;
+
+            try {
+                Class clz = loadClass(backendClassName);
+                backend = newDynaCodeInstance(clz);
+
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+            try {
+                // invoke on backend
+                return proxy.invokeSuper(obj, args);
+                //return method.invoke(obj, args);
+            } catch (InvocationTargetException e) {
+                throw e.getTargetException();
+            }
+        }
+
+        private Object newDynaCodeInstance(Class clz) {
+            try {
+                return clz.newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to new instance of DynaCode class " + clz.getName(), e);
+            }
+        }
+
+    }
+
+    /**
+     * Extracts a classpath string from a given class loader. Recognizes only
+     * URLClassLoader.
+     */
+    public static String extractClasspath(ClassLoader cl) {
+        StringBuffer buf = new StringBuffer();
+
+        while (cl != null) {
+            if (cl instanceof URLClassLoader) {
+                URL urls[] = ((URLClassLoader) cl).getURLs();
+                for (int i = 0; i < urls.length; i++) {
+                    if (buf.length() > 0) {
+                        buf.append(File.pathSeparatorChar);
+                    }
+                    buf.append(urls[i].getFile().toString());
+                }
+            }
+            cl = cl.getParent();
+        }
+
+        return buf.toString();
+    }
+
+    /**
+     * Log a message.
+     */
+    private static void info(String msg) {
+        //System.out.println("[DynaCode] " + msg);
+    }
+
+    public String getPathDirOutput() {
+        return pathDirOutput;
+    }
+
+    public void setPathDirOutput(String pathDirOutput) {
+        this.pathDirOutput = pathDirOutput;
+    }
+
+    public static void addURL(URL u, ClassLoader loader) throws IOException {
+
+        URLClassLoader sysloader = (URLClassLoader) loader;
+        Class sysclass = URLClassLoader.class;
+       
+
+        try {
+            Method method = sysclass.getDeclaredMethod("addURL", new Class[]{URL.class});
+            method.setAccessible(true);
+            method.invoke(sysloader, new Object[]{u});
+        } catch (Throwable t) {
+            t.printStackTrace();
+            throw new IOException("Error, could not add URL to system classloader");
+        }//end try catch
+
+    }//end method
+
+    public void setCompileClasspath(String compileClasspath) {
+        this.compileClasspath = compileClasspath;
+    }
+
+    public void setParentClassLoader(ClassLoader parentClassLoader) {
+        this.parentClassLoader = parentClassLoader;
+    }
+
+    
+
+}

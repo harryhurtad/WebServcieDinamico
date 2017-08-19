@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<weblogic-ejb-jar xmlns="http://xmlns.oracle.com/weblogic/weblogic-ejb-jar" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/ejb-jar_3_1.xsd http://xmlns.oracle.com/weblogic/weblogic-ejb-jar http://xmlns.oracle.com/weblogic/weblogic-ejb-jar/1.3/weblogic-ejb-jar.xsd">
+
+<!-- Descriptor de EJB de parametrizacion, por defecto -->
+    <weblogic-enterprise-bean>
+        <ejb-name>DynamicParametrizacionSessionBean</ejb-name>
+        <stateless-session-descriptor>
+            <business-interface-jndi-name-map>
+                <business-remote>com.unico.ws.interfaces.DynamicParametrizacionSessionBeanRemote</business-remote>
+                <jndi-name>ejb/DynamicParametrizacionSessionBean</jndi-name>
+            </business-interface-jndi-name-map>
+        </stateless-session-descriptor>
+        <enable-call-by-reference>True</enable-call-by-reference>
+    </weblogic-enterprise-bean>
+
+<!-- Inicio Iteracion de la lista de EJBs remotos necesarios para la ejecucion de WS -->
+    <weblogic-enterprise-bean>
+        <ejb-name>DynamicExcecutionSessionBean</ejb-name>
+        <stateless-session-descriptor>
+            <business-interface-jndi-name-map>
+                <business-remote>com.unico.ws.interfaces.DynamicExcecutionSessionBeanRemote</business-remote>
+                <jndi-name>ejb/DynamicExcecutionSessionBean</jndi-name>
+            </business-interface-jndi-name-map>
+        </stateless-session-descriptor>
+        <enable-call-by-reference>True</enable-call-by-reference>
+    </weblogic-enterprise-bean>
+<!-- Fin Iteracion de la lista de EJBs remotos necesarios para la ejecucion de WS -->
+</weblogic-ejb-jar>

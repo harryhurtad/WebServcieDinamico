@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+				elementFormDefault="qualified"
+				xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+				xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
+				jaxb:extensionBindingPrefixes="xjc"
+				jaxb:version="1.0">
+                <xsd:annotation>
+			<xsd:appinfo>
+				<jaxb:globalBindings generateIsSetMethod="true">
+					<xjc:serializable uid="12343"/>
+				</jaxb:globalBindings>
+			</xsd:appinfo>
+		</xsd:annotation>
+    <xsd:complexType name="CargueArchivos">
+        <xsd:sequence>
+            <xsd:element name="fechaCargar" type="xsd:date"/>
+            <xsd:element name="idTipoArchivoSeleccionado" type="xsd:int"/>
+            <xsd:element name="nombreArchivo" type="xsd:string"/>
+            <xsd:element name="idTipoArchivo" type="xsd:int"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:element name="CargueArchivos" type="CargueArchivos"/>
+</xsd:schema>

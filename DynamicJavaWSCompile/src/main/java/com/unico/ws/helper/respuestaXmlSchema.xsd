@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+         elementFormDefault="qualified"
+	 xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+         xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
+         jaxb:extensionBindingPrefixes="xjc"
+         jaxb:version="1.0">
+    <xsd:annotation>
+     <xsd:appinfo>
+         <jaxb:globalBindings generateIsSetMethod="true">
+              <xjc:serializable uid="12343"/>
+         </jaxb:globalBindings>
+      </xsd:appinfo>
+   </xsd:annotation>
+    <xsd:complexType name="RespuestaDTOComplexType">
+        <xsd:sequence>
+            <xsd:element name="codigo" type="xsd:string"/>
+            <xsd:element name="OperacionDTO" type="tns:OperacionDTOComplexType"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="OperacionDTOComplexType">
+        <xsd:sequence>
+            <xsd:element name="mensaje" type="xsd:string"/>
+            <xsd:element name="dato1" type="xsd:integer"/>
+            <xsd:element name="dato2" type="xsd:integer"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:element name="RespuestaDTO" type="tns:RespuestaDTOComplexType"/>
+</xsd:schema>

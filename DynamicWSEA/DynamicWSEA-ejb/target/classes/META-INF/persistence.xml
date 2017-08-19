@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.0" xmlns="http://java.sun.com/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
+    <persistence-unit name="com.unico.ws_Dynamic-commonsWS_jar_1.0PU" transaction-type="RESOURCE_LOCAL">
+        <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>    
+        <class>com.unico.ws.entity.PublicadorWsParametrosToMapManagebean</class>
+        <class>com.unico.ws.entity.ParametrosToMapMetodos</class>
+        <class>com.unico.ws.entity.ParametrosToMapInstClass</class>
+        <class>com.unico.ws.entity.PublicadorWsParametrosMetodosOperaciones</class>
+        <class>com.unico.ws.entity.PublicadorWsClases</class>
+        <class>com.unico.ws.entity.PublicadorWsOperaciones</class>
+        <class>com.unico.ws.entity.PublicadorWsParametrosOperaciones</class>
+        <class>com.unico.ws.entity.PublicadorWsMetodosOperaciones</class>
+        <class>com.unico.ws.entity.PublicadorWsEstructura</class>   
+        <class>com.unico.ws.entity.PublicadorWsDependenciaClases</class> 
+        <class>com.unico.ws.entity.PublicadorWsEstadoInvocOper</class>    
+        <class>com.unico.ws.entity.ConstantesParametrizacionWs</class>
+        <class>com.unico.ws.entity.MetodosOperacionesJsf</class>       
+        <class>com.unico.ws.entity.PublicadorWsClasesAtributos</class>
+        <class>com.unico.ws.entity.PublicadorWsEjecucionOperacionCliente</class>
+        <properties>
+            <property name="javax.persistence.jdbc.url" value="jdbc:sqlserver://10.137.0.11:1433;databaseName=DBDynamicWS"/>
+            <property name="javax.persistence.jdbc.password" value="consulta"/>
+            <property name="javax.persistence.jdbc.driver" value="com.microsoft.sqlserver.jdbc.SQLServerDriver"/>
+            <property name="javax.persistence.jdbc.user" value="consulta"/>
+        </properties>
+    </persistence-unit>
+    <persistence-unit name="DynamicWS_0PU" transaction-type="JTA">
+        <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+        <jta-data-source>jdbc/DBDynamicWS</jta-data-source>  
+        <class>com.unico.ws.entity.PublicadorWsParametrosToMapManagebean</class>
+        <class>com.unico.ws.entity.ParametrosToMapMetodos</class>
+        <class>com.unico.ws.entity.ParametrosToMapInstClass</class>
+        <class>com.unico.ws.entity.PublicadorWsParametrosMetodosOperaciones</class>
+        <class>com.unico.ws.entity.PublicadorWsClases</class>
+        <class>com.unico.ws.entity.PublicadorWsOperaciones</class>
+        <class>com.unico.ws.entity.PublicadorWsParametrosOperaciones</class>
+        <class>com.unico.ws.entity.PublicadorWsMetodosOperaciones</class>
+        <class>com.unico.ws.entity.PublicadorWsEstructura</class>   
+        <class>com.unico.ws.entity.PublicadorWsDependenciaClases</class> 
+        <class>com.unico.ws.entity.PublicadorWsEstadoInvocOper</class>    
+        <class>com.unico.ws.entity.ConstantesParametrizacionWs</class>
+        <class>com.unico.ws.entity.MetodosOperacionesJsf</class>       
+        <class>com.unico.ws.entity.PublicadorWsClasesAtributos</class>
+        <class>com.unico.ws.entity.PublicadorWsEjecucionOperacionCliente</class>
+         
+        <!-- <properties>
+            <property name="eclipselink.logging.level" value="FINEST"/>
+            <property name="eclipselink.logging.logger" value="DefaultLogger"/>
+              <property name="eclipselink.logging.parameters" value="true"/>
+        </properties>-->
+    </persistence-unit>
+ 
+</persistence>

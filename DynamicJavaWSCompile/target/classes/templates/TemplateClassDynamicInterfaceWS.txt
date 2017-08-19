@@ -1,0 +1,32 @@
+/**
+----------NO EDITAR-----------
+**/
+
+<#if package?? && package != "">
+package ${package};
+
+</#if>     
+ <#list imports as import>   
+    import ${import.nombreCLase};    
+ </#list>
+ 
+ <#macro paramTest listaParametros...>
+	<#local contador=0 valRetorno="" >
+	
+	<#list listaParametros as parametro> 
+	
+	 Prueba
+		
+	</#list>
+      
+ </#macro>
+ 
+  @WebService(targetNamespace="${targetNameSpace}")
+ public interface ${name_class}  {
+
+  <#list operaciones as operacion>   
+         @WebMethod
+         public <#if operacion.nombreCLassRetorno??>${operacion.nombreCLassRetorno}<#else>void</#if>  ${operacion.nombreMetodo}  (<#list operacion.listaParametros as parametro><#if parametro.orden==1>${parametro.typeClase.simpleName}  ${parametro.alias}<#else>,${parametro.typeClase.simpleName}  ${parametro.alias}</#if> </#list>  );
+  
+ </#list>
+}

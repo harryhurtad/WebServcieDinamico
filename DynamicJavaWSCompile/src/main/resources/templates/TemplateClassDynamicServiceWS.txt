@@ -1,0 +1,199 @@
+/**
+----------NO EDITAR-----------
+**/
+
+<#if package?? && package != "">
+package ${package};
+
+</#if>
+    import javax.jws.WebService;
+    import  javax.ejb.EJB;
+    import java.util.logging.Level;
+    import java.util.logging.Logger;
+    import javax.naming.InitialContext;
+    import javax.naming.NamingException;
+    import javax.jws.WebMethod; 
+    import java.io.IOException;
+   // import com.unico.ws.helper.WebServicesHelper;
+    import com.unico.ws.exception.DynamicWSException;
+    import com.sun.xml.ws.developer.SchemaValidation;    
+    import javax.naming.NamingException;
+    //import com.unico.ws.interfaces.PublicDynamicWSSessionBeanRemote;
+    import com.unico.ws.helper.WSDynamicUtil;
+     
+ <#list imports as import>   
+    import ${import};
+   
+ </#list>
+ 
+ <#macro paramTest listaParametros...>
+	<#local contador=0 valRetorno="" >
+	
+	<#list listaParametros as parametro> 
+	
+	 Prueba
+		
+	</#list>
+      
+ </#macro>
+
+<#function adicionarParametrosMetodo listaOperacion>
+    <#local datoRetorno = "">
+    <#list listaOperacion as parametro>
+        <#if parametro.ordenParametro==1>
+            <#local datoRetorno=datoRetorno+"${generarExpresionParametroEntrada(parametro)}">
+        <#else>
+            <#local datoRetorno=datoRetorno+",${generarExpresionParametroEntrada(parametro)}">
+        </#if> 
+    </#list>
+    <#return datoRetorno>
+</#function>
+
+
+<#function generarExpresionParametroEntrada parametro>
+    <#local datoRetorno = "">
+    <#-- Valida si el parametro a parametrizar es un Map-->
+    <#if parametro.idClaseCollection?? && parametro.idClaseLlave?? && parametro.idClaseValor??>
+        <#local datoRetorno=datoRetorno+"${parametro.idClaseCollection.packageClass}.${parametro.idClaseCollection.nombreCLase}<${parametro.idClaseLlave.nombreCLase},${parametro.idClaseValor.nombreCLase}> ${parametro.nombreParametro}"> 
+    <#-- Valida si es un collection-->
+     <#elseif parametro.idClaseCollection?? && parametro.idClaseValor?? && !(parametro.idClaseLlave)??>
+         <#local datoRetorno=datoRetorno+"${parametro.idClaseCollection.packageClass}.${parametro.idClaseCollection.nombreCLase}<${parametro.idClaseValor.nombreCLase}> ${parametro.nombreParametro}"> 
+     <#else>
+          <#local datoRetorno=datoRetorno+"${parametro.idClaseValor.nombreCLase}  ${parametro.nombreParametro}"> 
+    </#if>
+
+    <#return datoRetorno>
+</#function>
+
+<#function hasDependenciaClassCollection parametro>
+     <#local datoRetorno = false>
+    <#if parametro.idClaseCollection?? && parametro.idClaseLlave?? && parametro.idClaseValor??>
+        <#local datoRetorno=true>
+     <#elseif parametro.idClaseCollection?? && parametro.idClaseValor?? && !(parametro.idClaseLlave)??>
+        <#local datoRetorno=true>     
+     </#if>
+     <#return datoRetorno>
+</#function>
+
+
+<#function generarDependenciaClassCollection parametro>
+    <#local datoRetorno = "">
+    <#-- Valida si el parametro a parametrizar es un Map-->
+    <#if parametro.idClaseCollection?? && parametro.idClaseLlave?? && parametro.idClaseValor??>
+        <#if parametro.idClaseLlave.publicadorWsClasesDependenciaList??>   
+             <#local datoRetorno=datoRetorno+"\"${generarContenidoDependeciaClase(parametro.idClaseLlave.publicadorWsClasesDependenciaList)}\""> 
+        </#if>
+         <#if parametro.idClaseValor.publicadorWsClasesDependenciaList??&& parametro.idClaseValor.publicadorWsClasesDependenciaList?has_content>   
+            <#local datoRetorno=datoRetorno+"\"${generarContenidoDependeciaClase(parametro.idClaseValor.publicadorWsClasesDependenciaList)}\""> 
+        </#if>        
+        <#local datoRetorno=datoRetorno+"\"${parametro.idClaseValor.packageClass}.${parametro.idClaseValor.nombreCLase}"> 
+    <#-- Valida si es un collection-->
+     <#elseif parametro.idClaseCollection?? && parametro.idClaseValor?? && !(parametro.idClaseLlave)??>
+         <#if parametro.idClaseValor.publicadorWsClasesDependenciaList?? && parametro.idClaseValor.publicadorWsClasesDependenciaList?has_content>   
+            <#local datoRetorno=datoRetorno+"\"${generarContenidoDependeciaClase(parametro.idClaseValor.publicadorWsClasesDependenciaList)}\"">   
+         </#if>   
+         <#local datoRetorno=datoRetorno+"\"${parametro.idClaseValor.packageClass}.${parametro.idClaseValor.nombreCLase}\""> 
+    </#if>
+
+    <#return datoRetorno>
+</#function>
+
+
+<#function generarContenidoBeanNegocio listaParametroOper>
+    <#local datoRetorno = "">
+    <#list listaParametroOper as parametro>
+        <#-- Valida si el parametro es un objeto complejo o simple -->
+        <#if parametro.ordenParametro==1 && !(parametro.idClaseValor.archivoXSD)?? >
+            <#local datoRetorno=datoRetorno+"${parametro.nombreParametro}" >
+        <#elseif parametro.ordenParametro==1 && parametro.idClaseValor.archivoXSD??>
+            <#-- Realiza la creacion de la linea de codigo para el primer objeto complejo -->
+            <#local datoRetorno=datoRetorno+"WSDynamicUtil.getInstance().realizarSerializacion(${parametro.nombreParametro}),new String[]{">
+           
+
+            <#-- Evalua si el objeto complejo tiene dependencias -->
+            <#if parametro.idClaseValor.publicadorWsClasesDependenciaList??>
+             <#local datoRetorno=datoRetorno+"${generarContenidoDependeciaClase(parametro.idClaseValor.publicadorWsClasesDependenciaList)}">
+            </#if>
+            <#-- Adiciona las clases internas que contiene la clase Map o un obj Collection  en caso de que sea un param de este tipo-->
+            <#if hasDependenciaClassCollection(parametro)==true>
+                <#local datoRetorno=datoRetorno+"${generarDependenciaClassCollection(parametro)},">
+            </#if>
+            <#local datoRetorno=datoRetorno+"${parametro.nombreParametro}.getClass().getCanonicalName()}">
+            <#elseif (parametro.idClaseValor.archivoXSD)??>
+                <#-- Adicional la parametrizacion necesaria para un objeto complejo a ser enviado al EJB -->
+                    <#local datoRetorno=datoRetorno+",WSDynamicUtil.getInstance().realizarSerializacion(${parametro.nombreParametro}),new String[]{">
+                <#if parametro.idClaseValor.publicadorWsClasesDependenciaList?has_content>
+                     <#local datoRetorno=datoRetorno+"${generarContenidoDependeciaClase(parametro.idClaseValor.publicadorWsClasesDependenciaList)}">    
+                </#if>
+                 <#-- Adiciona las clases internas que contiene la clase Map o un obj Collection  en caso de que sea un param de este tipo-->
+                 <#if hasDependenciaClassCollection(parametro)==true>
+                     <#local datoRetorno=datoRetorno+"${generarDependenciaClassCollection(parametro)},">
+                 </#if>
+               <#local datoRetorno=datoRetorno+"${parametro.nombreParametro}.getClass().getCanonicalName()}">               
+              
+         <#else>
+          
+           <#local datoRetorno=datoRetorno+",${parametro.nombreParametro}">
+        </#if>
+    </#list>
+    <#return datoRetorno>
+</#function>
+
+<#function generarContenidoDependeciaClase publicadorWsClasesDependenciaList>
+    <#local datoRetorno = "">
+    <#list publicadorWsClasesDependenciaList as dependencia>
+             <#local  datoRetorno= datoRetorno+"\"${dependencia.publicadorWsClasesPrincipal.packageClass}.${dependencia.publicadorWsClasesDependencia.nombreCLase}\""+",">
+    </#list>
+    <#return datoRetorno>
+</#function>
+
+
+@WebService(
+        portName = "${portName}",
+        serviceName = "${name_service}",
+        targetNamespace = "${targetNameSpace}")    
+@SchemaValidation    
+public class ${name_service}  {
+
+  //@EJB(mappedName = "ejb/DynamicExcecutionSessionBean") DynamicExcecutionSessionBeanRemote beanRemote;
+   
+ 
+  <#list operaciones as operacion>   
+         @WebMethod
+         public <#if operacion.idClaseRetornoOperacion??>${operacion.idClaseRetornoOperacion.nombreCLase}<#else>String</#if>  ${operacion.metodoOperacion}  (${adicionarParametrosMetodo(operacion.publicadorWsParametrosOperacionesList)} ){
+                ${ejbInterfaceRemote} beanRemote=(${ejbInterfaceRemote})realizarInvocacionJNDI("${jndi_ejb_interface}");
+          <#if operacion.idClaseRetornoOperacion?? > <#if operacion.idClaseRetornoOperacion.archivoXSD??>  
+        ${operacion.idClaseRetornoOperacion.nombreCLase} respuestaRetorno=null;    
+        byte[] respuestaRetornoByte=<#else>${operacion.idClaseRetornoOperacion.nombreCLase} respuesta=</#if><#else>String respuesta=</#if> beanRemote.${operacion.metodoOperacion}(${generarContenidoBeanNegocio(operacion.publicadorWsParametrosOperacionesList)});
+      
+          <#if operacion.idClaseRetornoOperacion?? && operacion.idClaseRetornoOperacion.archivoXSD??>
+              try{
+                PublicDynamicWSSessionBeanRemote beanPublicDynamicWS=  (PublicDynamicWSSessionBeanRemote) realizarInvocacionJNDI("ejb/PublicDynamicWSSessionBean");
+                //public Object realizarDesSerializacion(ClassLoader classLoader, String[] listClassToLoad, byte[] instanceByte)
+               //  respuestaRetorno=(${operacion.idClaseRetornoOperacion.nombreCLase})WSDynamicUtil.getInstance().realizarDesSerializacion(respuestaRetornoByte);  
+                 //   respuestaRetorno=(${operacion.idClaseRetornoOperacion.nombreCLase})beanPublicDynamicWS.realizarDesSerializacion(${name_service}.class.getClassLoader(),new String[]{<#if operacion.idClaseRetornoOperacion.publicadorWsClasesDependenciaList??><#list operacion.idClaseRetornoOperacion.publicadorWsClasesDependenciaList as dependencia>"${dependencia.publicadorWsClasesPrincipal.packageClass}.${dependencia.publicadorWsClasesDependencia.nombreCLase}",</#list></#if>"${operacion.idClaseRetornoOperacion.packageClass}.${operacion.idClaseRetornoOperacion.nombreCLase}"},respuestaRetornoByte );
+                    respuestaRetorno=(${operacion.idClaseRetornoOperacion.nombreCLase})WebServicesHelper.realizarDesSerializacion(${name_service}.class.getClassLoader(),new String[]{<#if operacion.idClaseRetornoOperacion.publicadorWsClasesDependenciaList??><#list operacion.idClaseRetornoOperacion.publicadorWsClasesDependenciaList as dependencia>"${dependencia.publicadorWsClasesPrincipal.packageClass}.${dependencia.publicadorWsClasesDependencia.nombreCLase}",</#list></#if>"${operacion.idClaseRetornoOperacion.packageClass}.${operacion.idClaseRetornoOperacion.nombreCLase}"},respuestaRetornoByte );
+                }catch(DynamicWSException ex ){
+                     Logger.getLogger(DynamicExampleWS.class.getName()).log(Level.SEVERE, "Problemas al realizar la deserializacion del obj", ex);
+                }                
+                
+                return respuestaRetorno;
+          <#else>
+            return respuesta;
+          </#if>
+         }
+  
+ </#list>
+
+    private Object realizarInvocacionJNDI(String jndi_ejb){
+        Object bean=null;    
+         try {
+             bean=new InitialContext().lookup(jndi_ejb);
+         } catch (NamingException ex) {
+            Logger.getLogger(${name_service}.class.getName()).log(Level.SEVERE, null, ex);
+         }
+        return bean;
+    }
+
+}
+

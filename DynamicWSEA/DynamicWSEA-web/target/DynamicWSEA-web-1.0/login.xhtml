@@ -1,0 +1,23 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+       xmlns:h="http://java.sun.com/jsf/html"  
+    xmlns:f="http://java.sun.com/jsf/core"  
+    xmlns:p="http://primefaces.org/ui"
+    xmlns:ui="http://java.sun.com/jsf/facelets">
+    <head>
+        <title>Autenticacion Dynamic WS</title>
+    </head>
+     <form method="post" action="j_security_check" name="loginForm">
+        <h:panelGrid columns="2">
+                <h:outputLabel id="userNameLabel" for="j_username" value="Usuario:"/>
+                <h:inputText id="j_username" autocomplete="off" />
+                <h:outputLabel id="passwordLabel" for="j_password" value="Password:"/>
+                <h:inputSecret id="j_password" autocomplete="off"/>
+                <div/>
+                <h:panelGroup>
+                    <h:commandButton type="submit" value="Login"/>
+                    <h:commandButton type="reset" value="Clear"/>
+                </h:panelGroup>
+            </h:panelGrid>
+     </form>
+    
+</html>  

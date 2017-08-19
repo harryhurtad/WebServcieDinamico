@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:f="http://java.sun.com/jsf/core" xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:p="http://primefaces.org/ui">
+    <ui:composition>  
+        <h:form>
+             <p:growl id="message" showDetail="true"   sticky="true"/>             
+             <p:messages for="ERROR"/>
+             <p:growl id="messageError" for="ERROR" showDetail="true"  sticky="true"/>
+             <p:messages for="INFO"/>
+             <p:growl id="messageInfo" for="INFO" showDetail="true"  severity="info" sticky="true"/>
+            <p:menubar>
+              
+                <p:submenu label="Inicio" >
+                    <p:menuitem action="index.xhtml"  value="Inico" />
+                </p:submenu>
+                
+                <p:submenu label="Publicar WS">
+                    <p:menuitem  action="publishWS.xhtml" value="Publicar" immediate="false" ajax="false"/>                   
+                    <p:menuitem action="#{publishWSJSFManagedBean.recargarContexto()}" value="Reiniciar Contexto" />
+                    <p:menuitem action="#{publishWSJSFManagedBean.realizarInvocacionJNDI()}" value="Invocar JNDI" />
+                </p:submenu>
+              
+            </p:menubar>
+        </h:form>
+    </ui:composition>
+</html>

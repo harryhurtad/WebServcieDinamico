@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<weblogic-ejb-jar xmlns="http://xmlns.oracle.com/weblogic/weblogic-ejb-jar" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/ejb-jar_3_1.xsd http://xmlns.oracle.com/weblogic/weblogic-ejb-jar http://xmlns.oracle.com/weblogic/weblogic-ejb-jar/1.3/weblogic-ejb-jar.xsd">
+    <weblogic-enterprise-bean>
+        <ejb-name>DynamicWSExecutionStatusBean</ejb-name>
+        <stateless-session-descriptor>
+          <business-interface-jndi-name-map>
+            <business-remote>com.unico.ws.interfaces.DynamicWSExecutionStatusBeanRemote</business-remote>
+            <jndi-name>ejb/DynamicWSExecutionStatusBean</jndi-name>
+          </business-interface-jndi-name-map>
+        </stateless-session-descriptor>
+  </weblogic-enterprise-bean>
+  <weblogic-enterprise-bean>
+        <ejb-name>EjecucionOperClienteSessionBean</ejb-name>
+        <stateless-session-descriptor>
+          <business-interface-jndi-name-map>
+            <business-remote>com.unico.ws.interfaces.EjecucionOperClienteSessionBeanRemote</business-remote>
+            <jndi-name>ejb/EjecucionOperClienteSessionBean</jndi-name>
+          </business-interface-jndi-name-map>
+        </stateless-session-descriptor>
+  </weblogic-enterprise-bean>
+</weblogic-ejb-jar>

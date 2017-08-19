@@ -1,0 +1,92 @@
+/**
+----------NO EDITAR-----------
+**/
+
+<#if packageClass?? && packageClass != "">
+package ${packageClass};
+
+</#if>
+  import ${packageInterface}.${name_interface};
+  import com.unico.ws.constantes.DynamicWSMessageException;    
+  import com.unico.ws.interfaces.DynamicParametrizacionSessionBeanRemote;
+  import com.unico.ws.interfaces.DynamicProductorJMSSesBeanLocal;
+  import com.unico.ws.interfaces.EjecucionOperClienteSessionBeanRemote;
+  import com.unico.ws.object.RequestDynamicWSJMS;  
+  import com.unico.ws.object.RequestParamPrimitiveDynaJMS;
+  import com.unico.ws.object.ReqParamsComplexObjDynaJMS; 
+  import com.unico.ws.exception.DynamicWSException;
+  import javax.annotation.PostConstruct;
+  import javax.ejb.EJB;
+  import javax.ejb.Stateless;  
+  import java.util.UUID;
+  import javax.naming.InitialContext;
+  import javax.naming.NamingException;
+
+ 
+  
+ @Stateless(name = "${name_ejb}", mappedName = "ejb/${name_ejb}")    
+public class ${name_ejb} implements ${name_interface} {
+
+   @EJB
+   private DynamicProductorJMSSesBeanLocal dynamicProductorJMSSesBean;
+   private EjecucionOperClienteSessionBeanRemote metodosOperSessionBean;
+   private DynamicParametrizacionSessionBeanRemote dynamicParametrizacionSessionBean; 
+   private String contextoWebClient;
+   private  static final org.apache.log4j.Logger LOGGER = org.apache.log4j.Logger.getLogger(${name_ejb}.class);
+    
+    @PostConstruct
+    public void loadInfoParam(){
+          try {
+           metodosOperSessionBean= (EjecucionOperClienteSessionBeanRemote)new InitialContext().lookup("ejb/EjecucionOperClienteSessionBean");
+           dynamicParametrizacionSessionBean=(DynamicParametrizacionSessionBeanRemote)new InitialContext().lookup("ejb/DynamicParametrizacionSessionBean");
+           contextoWebClient= dynamicParametrizacionSessionBean.buscarNombreContextoCliente("${nombre_ws}");
+       } catch (NamingException ex) {
+           LOGGER.error(DynamicWSMessageException.ERROR_LOAD_PARAM_EJB+"${name_ejb}", ex);
+       }
+    } 
+
+   
+ <#list operaciones as operacion>   
+        @Override
+        public <#if operacion.idClaseRetornoOperacion??>${operacion.idClaseRetornoOperacion.packageClass}.${operacion.idClaseRetornoOperacion.nombreCLase}<#else>String</#if>  ${operacion.metodoOperacion}   (       
+        <#list operacion.publicadorWsParametrosOperacionesList as parametro><#if parametro.ordenParametro==1 && !(parametro.idClaseValor.archivoXSD)?? >${parametro.idClaseValor.packageClass}.${parametro.idClaseValor.nombreCLase}   ${parametro.nombreParametro}<#elseif parametro.ordenParametro==1 && parametro.idClaseValor.archivoXSD??>byte[] ${parametro.nombreParametro}, String[] list${parametro.nombreParametro}
+        <#elseif (parametro.idClaseValor.archivoXSD)??>,byte[] ${parametro.nombreParametro},String[] list${parametro.nombreParametro}<#else>, ${parametro.idClaseValor.packageClass}.${parametro.idClaseValor.nombreCLase}   ${parametro.nombreParametro}</#if></#list> ){
+                String respuseta=null;
+                String uniqueID="";
+                try {
+                    LOGGER.info("${name_ejb}->Inicia la ejecucion del metodo operacion  ${operacion.metodoOperacion}");             
+                    Integer idOperacion=  metodosOperSessionBean.consultaIdOperacion("${operacion.nombreOperacion}");
+                    //Id del Request
+                    uniqueID = UUID.randomUUID().toString();
+                    RequestDynamicWSJMS requestWS=new RequestDynamicWSJMS(uniqueID, idOperacion, contextoWebClient);
+                    //Adicion al Wrapper los parametros
+                      <#list operacion.publicadorWsParametrosOperacionesList as parametro>
+                        <#if (parametro.idClaseValor.archivoXSD)?? >
+                    ReqParamsComplexObjDynaJMS param${parametro.ordenParametro}=new ReqParamsComplexObjDynaJMS(${parametro.nombreParametro}, list${parametro.nombreParametro});
+                        <#else>
+                    RequestParamPrimitiveDynaJMS param${parametro.ordenParametro}=new RequestParamPrimitiveDynaJMS(${parametro.nombreParametro});
+                        </#if>                    
+                      </#list>
+                    //Adiciona los parametros al map 
+                       <#list operacion.publicadorWsParametrosOperacionesList as parametro>
+                    requestWS.getMapParamsOperationWS().put(${parametro.ordenParametro}, param${parametro.ordenParametro});
+
+                       </#list>     
+                    dynamicProductorJMSSesBean.enviaMensajeCola(requestWS);
+                   
+                     LOGGER.info("${name_ejb}->Finaliza la ejecucion del metodo operacion  ${operacion.metodoOperacion}");
+            } catch (DynamicWSException ex) {
+                 respuseta=ex.getMessage()+" peticion: "+uniqueID;
+            }
+             <#if operacion.idClaseRetornoOperacion??>
+                return null;  
+             <#else>
+                return respuseta!=null?respuseta:"Se ha generado la peticion-> "+uniqueID;
+            </#if>
+        }
+
+  </#list>   
+
+  
+
+}

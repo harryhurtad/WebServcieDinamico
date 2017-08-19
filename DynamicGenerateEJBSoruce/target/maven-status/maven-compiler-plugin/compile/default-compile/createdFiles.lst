@@ -1,0 +1,4 @@
+com\unico\ws\main\GenerateEJBSourcerMain.class
+com\unico\ws\helper\WeblogicEJBDescriptorDTO.class
+com\unico\ws\helper\GenerarEJBWSClientHelper.class
+com\unico\ws\main\GenerateEJBSourceJenkinsMain.class
